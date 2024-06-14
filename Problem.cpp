@@ -34,6 +34,44 @@ int Problem::calculate_cmax(vector<Task> tasks) {
     return end_time[m - 1];
 }
 
+int Problem::fast_calculate_cmax(vector<Task>& tasks, int newPosition, Task& newTask) {
+    int numJobs = tasks.size() + 1;
+    int numMachines = newTask.get_size();
+    vector<int> completionTimes(numMachines, 0);
+    vector<int> previousCompletionTimes(numMachines, 0);
+
+    for (int i = 0; i <= tasks.size(); ++i) {
+        if (i == newPosition) {
+            for (int j = 0; j < numMachines; ++j) {
+                if (j == 0) {
+                    completionTimes[j] = previousCompletionTimes[j] + newTask.get_time_at_index(j);
+                } else {
+                    completionTimes[j] = max(completionTimes[j-1], previousCompletionTimes[j]) + newTask.get_time_at_index(j);
+                }
+            }
+        } else {
+            for (int j = 0; j < numMachines; ++j) {
+                if (j == 0) {
+                    completionTimes[j] = previousCompletionTimes[j] + tasks[i < newPosition ? i : i-1].get_time_at_index(j);
+                } else {
+                    completionTimes[j] = max(completionTimes[j-1], previousCompletionTimes[j]) + tasks[i < newPosition ? i : i-1].get_time_at_index(j);
+                }
+            }
+            previousCompletionTimes = completionTimes;
+        }
+    }
+    return completionTimes[numMachines-1];
+}
+
+bool compare_M1( Task& t1, Task& t2) {
+    return t1.get_time_at_index(0) < t2.get_time_at_index(0);
+}
+
+bool compare_M2( Task& t1, Task& t2) {
+    return t1.get_time_at_index(1) < t2.get_time_at_index(1);
+}
+
+
 Result Problem::bruteforce() {
     int min_cmax = 100000;
     std::vector<Task> best;
@@ -121,4 +159,62 @@ Result Problem::simulated_annealing(double initial_temperature, double cooling_r
 
     return {best_instance, best_cmax};
 }
+
+
+
+Result Problem::FNEH(){
+    std::sort(instance.begin(), instance.end(), [](Task& task1, Task& task2){
+        return task1.sum_times() > task2.sum_times();
+    });
+
+    std::vector<Task> temp_instance;
+
+    for (Task task : instance) {
+        int best_position = -1;
+        int temp_cmax = INT_MAX;
+
+        for (int i = 0; i <= temp_instance.size(); ++i) {
+            int cmax = fast_calculate_cmax(temp_instance, i, task);
+            if (cmax < temp_cmax) {
+                temp_cmax = cmax;
+                best_position = i;
+            }
+        }
+        temp_instance.insert(temp_instance.begin() + best_position, task);
+    }
+
+    int min_cmax = calculate_cmax(temp_instance);
+
+    return {temp_instance, min_cmax};
+}
+
+// TABU sort
+
+ Result Problem::Johnson_algorithm(){
+    vector<Task> M1,M2;
+
+    for (int i =0; i < instance.size(); ++i){
+        Task task = instance[i];
+
+        if (task.get_time_at_index(0) <= task.get_time_at_index(1)){
+            M1.push_back(task);
+        }
+        else {
+            M2.push_back(task);
+        }
+    }
+
+    sort(M1.begin(), M1.end(), compare_M1);
+
+    sort(M2.begin(), M2.end(), compare_M2);
+
+    vector<Task> result;
+
+     result.insert(result.end(), M1.begin(), M1.end());
+     result.insert(result.end(), M2.begin(), M2.end());
+
+    int min_cmax = calculate_cmax(result);
+    return{result, min_cmax};
+ }
+
 
