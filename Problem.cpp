@@ -92,31 +92,36 @@ Result Problem::NEH() {
     sort(instance.begin(), instance.end(), [](Task& task1, Task& task2){
         return task1.sum_times() > task2.sum_times();
     });
+
     std::vector<Task> temp_instance;
 
-    for (Task task : instance) {
+    for (Task& task : instance) {
         int best_position = -1;
         int temp_cmax = 10000;
 
+        // Temporary vector to hold best permutation found
+        std::vector<Task> best_permutation;
+
         for (int i = 0; i <= temp_instance.size(); ++i) {
-            //Inserting tasks on every possible place in temporal instance
+            // Insert task at position i in temporary instance
             temp_instance.insert(temp_instance.begin() + i, task);
+
+            // Calculate cmax for current permutation
             int cmax = calculate_cmax(temp_instance);
+
+            // Check if current permutation is the best found so far
             if (cmax < temp_cmax) {
                 temp_cmax = cmax;
                 best_position = i;
+                best_permutation = temp_instance; // Update best permutation
             }
-            //Task printing below:
-            /*
-            for (Task task : temp_instance) {
-                std::cout << task.get_index() << " ";
-            }
-            cout << endl;
-            */
+
+            // Remove task from temporary instance for next iteration
             temp_instance.erase(temp_instance.begin() + i);
         }
-        //Updating temporal instance with the best position for current task
-        temp_instance.insert(temp_instance.begin() + best_position, task);
+
+        // Update temporary instance with the best position for current task
+        temp_instance = best_permutation;
     }
 
     int min_cmax = calculate_cmax(temp_instance);
