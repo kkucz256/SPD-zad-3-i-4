@@ -9,7 +9,7 @@ void Result::print_results() {
     string ids = "";
     for(Task task: tasks){
         ids += to_string(task.get_index()) + " ";
-        task.print_task();
+        //task.print_task();
     }
     std::cout <<"Cmax for this instance: " + to_string(cmax)+ "\nOrder of tasks: " + ids << endl << endl;
 }
